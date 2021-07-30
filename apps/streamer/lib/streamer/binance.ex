@@ -25,16 +25,16 @@ defmodule Streamer.Binance do
 
   defp process_event(%{"e" => "trade"} = event) do
     trade_event = %Streamer.Binance.TradeEvent{
-      :event_type => event["e"],
-      :event_time => event["E"],
-      :symbol => event["s"],
-      :trade_id => event["t"],
-      :price => event["p"],
-      :quantity => event["q"],
-      :buyer_order_id => event["b"],
-      :seller_order_id => event["a"],
-      :trade_time => event["T"],
-      :buyer_market_maker => event["m"]
+      event_type: event["e"],
+      event_time: event["E"],
+      symbol: event["s"],
+      trade_id: event["t"],
+      price: event["p"],
+      quantity: event["q"],
+      buyer_order_id: event["b"],
+      seller_order_id: event["a"],
+      trade_time: event["T"],
+      buyer_market_maker: event["m"]
     }
 
     Logger.debug(

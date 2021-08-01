@@ -1,8 +1,10 @@
 defmodule Naive.Trader do
   use GenServer
+
   require Logger
-  alias Streamer.Binance.TradeEvent
+
   alias Decimal, as: D
+  alias Streamer.Binance.TradeEvent
 
   defmodule State do
     @enforce_keys [:profit_interval, :symbol, :tick_size]
@@ -21,7 +23,13 @@ defmodule Naive.Trader do
 
   def init(%{symbol: symbol, profit_interval: profit_interval} = args) do
     symbol = String.upcase(symbol)
+
     Logger.info("Initializing new trader for #{symbol}")
+
+    Phoenix.PubSub.subscribe(
+      Streamer.PubSub,
+      "TRADE_EVENTS:#{symbol}"
+    )
 
     with tick_size <- fetch_tick_size(symbol) do
       {:ok,
@@ -33,7 +41,7 @@ defmodule Naive.Trader do
     end
   end
 
-  def handle_cast(
+  def handle_info(
         %TradeEvent{price: price},
         %State{symbol: symbol, buy_order: nil} = state
       ) do
@@ -47,7 +55,7 @@ defmodule Naive.Trader do
     {:noreply, %{state | buy_order: order}}
   end
 
-  def handle_cast(
+  def handle_info(
         %TradeEvent{
           buyer_order_id: order_id,
           quantity: quantity
@@ -76,7 +84,7 @@ defmodule Naive.Trader do
     {:noreply, %{state | sell_order: order}}
   end
 
-  def handle_cast(
+  def handle_info(
         %TradeEvent{
           seller_order_id: order_id,
           quantity: quantity
@@ -92,7 +100,7 @@ defmodule Naive.Trader do
     {:stop, :normal, state}
   end
 
-  def handle_cast(%TradeEvent{}, state), do: {:noreply, state}
+  def handle_info(%TradeEvent{}, state), do: {:noreply, state}
 
   defp calculate_sell_price(buy_price, profit_interval, tick_size) do
     fee = "1.001"
